@@ -1,0 +1,292 @@
+const Discord = require("discord.js"); 
+const { version } = require("discord.js");
+const math = require('mathjs');
+const weather = require('weather-js');
+const bot = new Discord.Client(); 
+const config = require("./config.json");
+const Jimp = require("jimp")
+const moment = require("moment");
+const await = require("await")
+moment.locale('pt-BR');
+
+
+bot.on('ready', () => {
+    console.log(`Bot foi iniciado, com sucesso e eu estou em ${bot.guilds.size} servidores.`); 
+    bot.user.setPresence({ game: { name: 'Meu Prefix é "c!".', type: 1, url: 'https://www.twitch.tv/frachzin_'}});
+});
+
+bot.on('message', async message => {
+    
+    if(message.channel.type === "dm") return;
+    
+    let prefix = config.prefix;
+    let messageArray = message.content.split(" ");
+    let command = messageArray[0];
+    let args = messageArray.slice(1);
+
+    if(!message.content.startsWith(prefix)) return;
+
+   if(message.content.startsWith(prefix + "bjs")){
+    if(message.mentions.users.size < 1) return message.reply("Você precisa mencionar alguém.")
+    let user = message.mentions.users.first()
+    if(user.id == message.author.id) return message.channel.send("Você não pode beijar a si mesmo.")
+    let member = message.mentions.users.first() || bot.users.get(args[0]) || message.author;
+    let bicon = bot.user.displayAvatarURL;
+    let botembed = new Discord.RichEmbed()
+    .setAuthor('Você está preste a beijar', "https://discordemoji.com/assets/emoji/8757_heartbeat_anim.gif")
+    .setTitle(`:kiss: Beijoooo.`)
+    .addField(`:kiss: Bee.. Bee... Beijoooo!`,  ` ${message.author.tag} está beijando ${member.tag} \n ${message.author.tag} da um beijo gostoso em ${member.tag}.`)
+    .setColor(0x36393F)
+    .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL)
+    .setThumbnail(bot.user.avatarURL)
+    .setImage('https://pa1.narvii.com/6214/5c506d2760822b9bc97f30eebd75a31ae73a0b2a_hq.gif')
+    return message.channel.send(botembed);
+  }
+  
+  if(message.content.startsWith(prefix + "calc")){
+    console.log(`[${message.author.tag}] [${message.author.id}] fez o comando [${command}.js]`)
+    let input = args.join(" ");
+    if (!input) {
+        message.reply('__Você deve fornecer uma equação a ser resolvida na calculadora!__');
+        return;
+    }
+
+    const question = args.join(" ");
+
+    let answer;
+    try {
+        answer = math.eval(question);
+    } catch (err) {
+        return message.reply(`**Questão invalida** ${err}`);
+    }
+
+    const Discord = require('discord.js');
+    const embed = new Discord.RichEmbed()
+        .setThumbnail("https://images-na.ssl-images-amazon.com/images/I/31QYTepQomL.png")
+        .setColor("0x08ff00")
+        .addField("**Questão:**", question, true)
+        .addField("**Responda:**", answer)
+
+    message.channel.send({
+        embed
+    })
+  }
+  if(message.content.startsWith(prefix + "limpar")){
+    if (!message.member.hasPermission("MANAGE_CHANNELS", false, true, true)) {
+        message.reply("Você não tem permissão para utilizar esse comando!");
+        return 0;
+    }
+
+    if (!args[0]) return message.channel.send("Não");
+    message.channel.bulkDelete(args[0]).then(() => {
+        message.channel.send(`Eu acabei de limpar ${args[0]} mensagens, que varredura! 💣`);
+    });
+  }
+  if(message.content.startsWith(prefix + "clima")){
+    weather.find({search: args.join(" "), degreeType: 'C'}, function(err, result) {
+        if (err) message.channel.send(err);
+        if (result === undefined || result.length === 0) {
+            message.channel.send('**Por favor insira um local para min ver o clima tempo!**')
+            return;
+        }
+        var current = result[0].current;
+        var location = result[0].location;
+        const embed = new Discord.RichEmbed()
+            .setDescription(`🌤 **${current.skytext}** 🌨`)
+            .setAuthor(`🏡 **Tempo para** ${current.observationpoint}`)
+            .setThumbnail(current.imageUrl)
+            .setColor(0x00AE86)
+            .addField('⏰ **Fuso horário**',`UTC${location.timezone}`, true)
+            .addField('🌦 **Tipo de Grau**',location.degreetype, true)
+            .addField('🌡 **Temperatura**',`${current.temperature} Graus`, true)
+            .addField('🌡 **Parece**', `${current.feelslike} Graus`, true)
+            .addField('🌫 **Ventos**',current.winddisplay, true)
+            .addField('🌊  **Umidade**', `${current.humidity}%`, true)
+            .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL);
+            message.channel.send({embed});
+        })
+    } 
+    if(message.content.startsWith(prefix + "invite")){
+        if(message.channel.type === 'dm') return;
+        var user = message.mentions.users.first();
+
+        if (!user) user = message.author;
+
+        var targetInvites = await message.guild.fetchInvites();
+
+        var invitesUses = 0;
+
+        targetInvites.forEach(invite => { 
+            if (invite.inviter.id === user.id) {
+                invitesUses += invite.uses;
+            }
+        });
+
+        var embed = new Discord.RichEmbed()
+            .setThumbnail(user.displayAvatarURL)
+            .addField("**• Membros Convidados •**", `\`\`\`js\n(${invitesUses}) - Membros\`\`\``)
+            .setColor("#00c4eb")
+            .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL);
+
+        message.channel.send(embed);
+    }
+    if(message.content.startsWith(prefix + "falar")){
+        if (!message.member.hasPermission("MANAGE_CHANNELS", false, true, true)) {
+            message.reply("Você não tem permissão para utilizar esse comando!");
+            return 0;
+        }
+    
+        if (!args.slice(0).join(' ')) return message.reply('Oque Voce Quer Que Eu Fale? Me Diga!')
+        message.channel.send({embed:{
+            'description':args.slice(0).join(' ')
+            ,'color':message.member.highestRole.color,
+        
+    
+        }})
+        message.delete().catch();
+    }
+    if(message.content.startsWith(prefix + "gay")){
+        let useruser = message.author.username;
+        let userurl = message.author.avatarURL;
+        let result = Math.floor(Math.random() * 100) + 1 + '%';
+        let gayembed = new Discord.RichEmbed()
+            .setTitle("Resultado!")
+            .setDescription(`**Sua porcentagem de ser Gay é: ${result}** :gay_pride_flag:`)
+            .setColor(0x36393F)
+            .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL)
+
+        message.channel.send(gayembed)
+    }
+     if(message.content.startsWith(prefix + "info")){
+        let gAvatar = message.guild.iconURL;
+        let embed = new Discord.RichEmbed()
+    
+        .setTimestamp()
+        .setTitle(`${message.guild.name}`)
+        .setThumbnail(gAvatar)
+        .setColor('#8B0000')
+        .setDescription(`Informações do servidor ${message.guild.name}.`)
+        .addField(`Id do servidor `, message.guild.id, true)
+        .addField(`Dono Da Guild `, message.guild.owner, true)
+        .addField(`Total de canais `, message.guild.channels.size, true)
+        .addField(`Criado em `, moment(message.guild.createdAt).format('ll'))
+        .addField(`Você entrou aqui em `, moment(message.member.joinedAt).format('lll'))
+        .addField(`Total de membros `, message.guild.memberCount)
+        .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL);
+    
+        message.channel.send({embed});
+     }
+     if(message.content.startsWith(prefix + "kick")){
+        if (!message.member.hasPermission('KICK_MEMBERS')) return message.channel.send('Você não possui permissão para usar este comando.');
+      
+        let member = message.mentions.members.first() || message.guild.members.get(args[0]);
+        let reason = args.slice(1).join(' ');
+      
+        if (!member) return message.channel.send('Por favor, mencione o membro a ser kickado!');
+        if (!member.kickable) return message.channel.send('Você não pode kickar esse usuário por ele ser de um cargo maior ou igual ao seu!');
+        
+      await member.kick(reason).catch(error => message.channel.send(`Desculpe, ocorreu algum erro. Error: ${error}`));
+      
+       
+        let channel = member.guild.channels.find('name','🍭punições');
+          if (!channel) return;
+          let embed = new Discord.RichEmbed()
+          .setTitle('**🎈  Abusou Tomou 🔫**')
+          .addField("**👤 Usuário:** " , member.user.tag, true)
+          .addField(`**👮 Punido Por**`, message.author, true)
+          .addField("**📃 Motivo:** " , reason, true)
+          .setThumbnail(member.user.displayAvatarURL, true)
+          .setTimestamp()
+          .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL)
+          .setColor('RANDOM')
+      
+          channel.sendEmbed(embed)
+
+          const razão = args.slice(1).join(" ")
+          const usuario = message.mentions.users.first();
+          const membro = message.mentions.members.first() || message.guild.members.get(args[0]);
+      
+          const kickembed = new Discord.RichEmbed()
+      
+              .setTitle('**🎈 Abusou Tomou 🔫**')
+              .addField('**💈 Você foi expulso do CoutMC Por:**', message.author.username, true)
+              .addField('**💈 Você teve sorte desta vez, mas da próxima**')
+              .addField('**📃 Motivo:** ', razão, true)
+              .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL)
+              .setTimestamp()
+              .setColor("f002e7");
+      
+          membro.send(kickembed)
+            
+          message.guild.member(usuario).kick() 
+      }
+     if(message.content.startsWith(prefix + "ping")){
+        let embed = new Discord.RichEmbed()
+        const clientms = ms.createdTimestamp - message.createdTimestamp
+
+        .setTitle("Pong 🏓")
+        .setColor("#0c0755") 
+        .setDescription(`**'📡 Seu ping é: ' + clientms + 'ms'**`)
+        .setField(`**🔭 Agora Meu Ping é:' + Math.round(client.ping) + 'ms'**`)
+        .setFooter(`CoutMC • © CopyRight 2019`, bot.user.displayAvatarURL)
+        message.channel.send(embed);
+     }
+     if(message.content.startsWith(prefix + "roleta")){
+        let resultado = Math.floor(Math.random() * 5 );
+
+        let vivo = new Discord.RichEmbed()
+        .setTitle('Resultado... 🔫')
+        .setColor(message.member.highestRole.color)
+        .setDescription(`${message.author} você está vivo! :smiley:`)
+        
+        let morto = new Discord.RichEmbed()
+        .setTitle('Resultado... 🔫')
+        .setColor(message.member.highestRole.color)
+        .setDescription(`${message.author} você está morto! :skull:`)
+        
+        
+        if (resultado === 1) return message.channel.send(morto); 
+        if (resultado !== 1 ) return message.channel.send(vivo);
+     }
+
+     if(message.content.startsWith(prefix + "juntar")){
+        var porcentagem = 0
+        var aleatorio = Math.round(Math.random() * 100)
+        porcentagem = aleatorio
+        let user1 = message.mentions.users.first() || message.author
+        let user2 = message.mentions.users.array()[1]
+        if(!user2) return message.reply("Você não mencionou ninguém para ser shipados.")
+        let draco_deus = await Jimp.read(user1.avatarURL)
+        let draco_deusdmais = await Jimp.read(user2.avatarURL)
+        await draco_deus.resize(115, 115)
+        await draco_deusdmais.resize(115, 115)
+        let dc_mt_deus_javascript = await Jimp.read("https://cdn.discordapp.com/attachments/486016051851689994/509883077707694100/ships.png")
+        await dc_mt_deus_javascript.composite(draco_deus, 1, 1)
+        await dc_mt_deus_javascript.composite(draco_deusdmais, 229, 1)
+        .write(`./img/${user1.id}${user2.id}.png`)
+        let aido = new Array ()
+        aido[1] = "Msg 1"
+        aido[2] = "Msg 2"
+        var i = Math.floor(2*Math.random())
+        var mensagem = porcentagem <= 5 ? `${porcentagem}% ${aido[i]}` : porcentagem <= 10 ? `${porcentagem}% [█████-----] Um dia talvez! 🤔` : porcentagem <= 50 ? `${porcentagem}% [███████-----] Eles são perfeitos! 😍 ` : porcentagem <= 70 ? `${porcentagem}% [███████----] Já deveriam estar casados! 💍 ` : porcentagem <= 100 ? `${porcentagem}% [██████████] Casal perfeito, Ninguem os separa! 💍` : `Casal perfeito, Ninguem os separa! 💍`
+        message.channel.send({
+            embed: {
+            "fields": [
+            {
+                "name": `Sera um novo casal?`,
+                "value": `${user1} + ${user2} = ${mensagem}`
+            }],
+                "color": 111119,
+            image: {
+                url: 'attachment://file.jpg'
+            }
+        },
+        files: [{
+            attachment: "./img/" + user1.id + user2.id + ".png",
+            name: 'file.jpg'
+        }]
+        })
+    }
+
+    })
+bot.login(config.token);
